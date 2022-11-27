@@ -55,7 +55,7 @@ class Message extends Base {
          * ctwaContext content
          * @type {object}
          */
-         this.ctwaContext = data.ctwaContext;
+        this.ctwaContext = data.ctwaContext;
 
         /**
          * Message type
