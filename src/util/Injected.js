@@ -383,6 +383,7 @@ exports.LoadUtils = () => {
 
         msg.isEphemeral = message.isEphemeral;
         msg.isStatusV3 = message.isStatusV3;
+        msg.ctwaContext = message.ctwaContext;
         msg.links = (message.getRawLinks()).map(link => ({
             link: link.href,
             isSuspicious: Boolean(link.suspiciousCharacters && link.suspiciousCharacters.size)
