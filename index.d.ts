@@ -42,6 +42,9 @@ declare namespace WAWebJS {
          */
         createGroup(name: string, participants: Contact[] | string[]): Promise<CreateGroupResult>
 
+        /** Reloads whatsapp web page */
+        reload(): Promise<void>
+
         /** Closes the client */
         destroy(): Promise<void>
 

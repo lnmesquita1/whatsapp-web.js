@@ -638,6 +638,15 @@ class Client extends EventEmitter {
         });
     }
 
+    /** 
+     * Reloads whatsapp web page 
+     */
+    async reload() {
+        await pupPage.evaluate(() => {
+            location.reload(true)
+         })
+    }
+
     /**
      * Closes the client
      */
