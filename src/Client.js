@@ -642,7 +642,7 @@ class Client extends EventEmitter {
      * Reloads whatsapp web page 
      */
     async reload() {
-        await pupPage.evaluate(() => {
+        await this.pupPage.evaluate(() => {
             location.reload(true)
          })
     }
