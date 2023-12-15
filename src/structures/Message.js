@@ -437,7 +437,7 @@ class Message extends Base {
 
         const result = await this.client.pupPage.evaluate(async (msgId) => {
             const msg = window.Store.Msg.get(msgId);
-            if (!msg) {
+            if (!msg || !msg.mediaData) {
                 return undefined;
             }
             if (msg.mediaData.mediaStage != 'RESOLVED') {
@@ -650,7 +650,7 @@ class Message extends Base {
             let msg = window.Store.Msg.get(msgId);
             if (!msg) return null;
 
-            let catEdit = (msg.type === 'chat' && window.Store.MsgActionChecks.canEditText(msg));
+            let catEdit = window.Store.MsgActionChecks.canEditText(msg) || window.Store.MsgActionChecks.canEditCaption(msg);
             if (catEdit) {
                 const msgEdit = await window.WWebJS.editMessage(msg, message, options);
                 return msgEdit.serialize();
