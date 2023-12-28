@@ -307,6 +307,12 @@ declare namespace WAWebJS {
             /** The message that was created */
             message: Message
         ) => void): this
+        
+        /** Emitted when a new message ciphertext is received  */
+        on(event: 'message_ciphertext', listener: (
+            /** The message that was ciphertext */
+            message: Message
+        ) => void): this
 
         /** Emitted when a new message ciphertext is received  */
         on(event: 'message_ciphertext', listener: (
