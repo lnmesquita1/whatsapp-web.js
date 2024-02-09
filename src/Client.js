@@ -43,6 +43,7 @@ const NoAuth = require('./authStrategies/NoAuth');
  * @fires Client#message_create
  * @fires Client#message_revoke_me
  * @fires Client#message_revoke_everyone
+ * @fires Client#message_ciphertext
  * @fires Client#message_edit
  * @fires Client#media_uploaded
  * @fires Client#group_join
@@ -658,6 +659,16 @@ class Client extends EventEmitter {
              * @param {string} prevBody
              */
             this.emit(Events.MESSAGE_EDIT, new Message(this, msg), newBody, prevBody);
+        });
+        
+        await page.exposeFunction('onAddMessageCiphertextEvent', msg => {
+            
+            /**
+             * Emitted when messages are edited
+             * @event Client#message_ciphertext
+             * @param {Message} message
+             */
+            this.emit(Events.MESSAGE_CIPHERTEXT, new Message(this, msg));
         });
 
         await page.exposeFunction('onAddMessageCiphertextEvent', msg => {
