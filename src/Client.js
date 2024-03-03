@@ -760,14 +760,14 @@ class Client extends EventEmitter {
                         status: 200,
                         contentType: 'text/html',
                         body: versionContent
-                    }); 
+                    });
                 } else {
                     req.continue();
                 }
             });
         } else {
             this.pupPage.on('response', async (res) => {
-                if(res.ok() && res.url() === WhatsWebURL) {
+                if (res.ok() && res.url() === WhatsWebURL) {
                     await webCache.persist(await res.text());
                 }
             });
@@ -851,7 +851,7 @@ class Client extends EventEmitter {
      * @property {string[]} [stickerCategories=undefined] - Sets the categories of the sticker, (if sendMediaAsSticker is true). Provide emoji char array, can be null.
      * @property {MessageMedia} [media] - Media to be sent
      */
-    
+
     /**
      * Send a message to a specific chatId
      * @param {string} chatId
@@ -890,12 +890,12 @@ class Client extends EventEmitter {
         if (content instanceof MessageMedia) {
             internalOptions.attachment = content;
             internalOptions.isViewOnce = options.isViewOnce,
-            content = '';
+                content = '';
         } else if (options.media instanceof MessageMedia) {
             internalOptions.attachment = options.media;
             internalOptions.caption = content;
             internalOptions.isViewOnce = options.isViewOnce,
-            content = '';
+                content = '';
         } else if (content instanceof Location) {
             internalOptions.location = content;
             content = '';
@@ -920,29 +920,69 @@ class Client extends EventEmitter {
         if (internalOptions.sendMediaAsSticker && internalOptions.attachment) {
             internalOptions.attachment = await Util.formatToWebpSticker(
                 internalOptions.attachment, {
-                    name: options.stickerName,
-                    author: options.stickerAuthor,
-                    categories: options.stickerCategories
-                }, this.pupPage
+                name: options.stickerName,
+                author: options.stickerAuthor,
+                categories: options.stickerCategories
+            }, this.pupPage
             );
         }
 
-        const newMessage = await this.pupPage.evaluate(async (chatId, message, options, sendSeen) => {
-            const chatWid = window.Store.WidFactory.createWid(chatId);
-            const chat = await window.Store.Chat.find(chatWid);
+        let linkPreviewData = null;
+        if (internalOptions.linkPreview) {
+            linkPreviewData = await this.pupPage.evaluate(async (content) => {
+                const link = window.Store.Validators.findLink(content);
+                if (link) {
+                    let preview = await window.Store.LinkPreview.getLinkPreview(link);
+                    if (preview && preview.data) {
+                        preview = preview.data;
+                        preview.preview = true;
+                        preview.subtype = 'url';
+                        return preview;
+                    }
+                }
 
+                return null;
+            }, content);
+        }
 
-            if (sendSeen) {
+        if (sendSeen && false) {
+            await this.pupPage.evaluate(async (chatId) => {
                 await window.WWebJS.sendSeen(chatId);
+            }, chatId);
+        }
+
+        let intentos = 0;
+        let maxIntentos = 2;
+        const errorCapturado = 'Protocol error (Runtime.callFunctionOn): Promise was collected';
+
+        while (intentos < maxIntentos) {
+            try {
+                const newMessage = await this.pupPage.evaluate(async (chatId, message, options, sendSeen, linkPreviewData) => {
+                    const chatWid = window.Store.WidFactory.createWid(chatId);
+                    const chat = await window.Store.Chat.find(chatWid);            
+        
+                    const msg = await window.WWebJS.sendMessage(chat, message, options, sendSeen, linkPreviewData);
+                    return window.WWebJS.getMessageModel(msg);
+                }, chatId, content, internalOptions, sendSeen, linkPreviewData);
+        
+                return new Message(this, newMessage);
+
+            } catch (error) {
+                if (error.message.includes(errorCapturado)) {
+                    // Si se produce el error esperado, incrementamos el número de intentos
+                    intentos++;
+                    console.log(`Intento ${intentos} de ${maxIntentos}`);
+                } else {
+                    // Si se produce otro error, lo lanzamos
+                    throw error;
+                }
             }
+        }
 
-            const msg = await window.WWebJS.sendMessage(chat, message, options, sendSeen);
-            return window.WWebJS.getMessageModel(msg);
-        }, chatId, content, internalOptions, sendSeen);
-
-        return new Message(this, newMessage);
+        // Si se alcanza el número máximo de intentos sin éxito, lanzamos el error
+        throw new Error(errorCapturado);
     }
-    
+
     /**
      * Searches for messages
      * @param {string} query
@@ -1010,22 +1050,22 @@ class Client extends EventEmitter {
 
         return ContactFactory.create(this, contact);
     }
-    
+
     async getMessageById(messageId) {
         const msg = await this.pupPage.evaluate(async messageId => {
             let msg = window.Store.Msg.get(messageId);
-            if(msg) return window.WWebJS.getMessageModel(msg);
+            if (msg) return window.WWebJS.getMessageModel(msg);
 
             const params = messageId.split('_');
-            if(params.length !== 3) throw new Error('Invalid serialized message id specified');
+            if (params.length !== 3) throw new Error('Invalid serialized message id specified');
 
             let messagesObject = await window.Store.Msg.getMessagesById([messageId]);
             if (messagesObject && messagesObject.messages.length) msg = messagesObject.messages[0];
-            
-            if(msg) return window.WWebJS.getMessageModel(msg);
+
+            if (msg) return window.WWebJS.getMessageModel(msg);
         }, messageId);
 
-        if(msg) return new Message(this, msg);
+        if (msg) return new Message(this, msg);
         return null;
     }
 
@@ -1086,9 +1126,9 @@ class Client extends EventEmitter {
      */
     async setDisplayName(displayName) {
         const couldSet = await this.pupPage.evaluate(async displayName => {
-            if(!window.Store.Conn.canSetMyPushname()) return false;
+            if (!window.Store.Conn.canSetMyPushname()) return false;
 
-            if(window.Store.MDBackend) {
+            if (window.Store.MDBackend) {
                 await window.Store.Settings.setPushname(displayName);
                 return true;
             } else {
@@ -1099,14 +1139,14 @@ class Client extends EventEmitter {
 
         return couldSet;
     }
-    
+
     /**
      * Gets the current connection state for the client
      * @returns {WAState} 
      */
     async getState() {
         return await this.pupPage.evaluate(() => {
-            if(!window.Store) return null;
+            if (!window.Store) return null;
             return window.Store.AppState.state;
         });
     }
@@ -1200,7 +1240,7 @@ class Client extends EventEmitter {
         unmuteDate = unmuteDate ? unmuteDate.getTime() / 1000 : -1;
         await this.pupPage.evaluate(async (chatId, timestamp) => {
             let chat = await window.Store.Chat.get(chatId);
-            await chat.mute.mute({expiration: timestamp, sendDevice:!0});
+            await chat.mute.mute({ expiration: timestamp, sendDevice: !0 });
         }, chatId, unmuteDate || -1);
     }
 
@@ -1237,11 +1277,11 @@ class Client extends EventEmitter {
                 const chatWid = window.Store.WidFactory.createWid(contactId);
                 return await window.Store.ProfilePic.profilePicFind(chatWid);
             } catch (err) {
-                if(err.name === 'ServerStatusCodeError') return undefined;
+                if (err.name === 'ServerStatusCodeError') return undefined;
                 throw err;
             }
         }, contactId);
-        
+
         return profilePic ? profilePic.eurl : undefined;
     }
 

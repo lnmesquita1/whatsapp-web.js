@@ -194,7 +194,7 @@ class Chat extends Base {
             };
 
             const chat = window.Store.Chat.get(chatId);
-            let msgs = chat.msgs.getModelsArray().filter(msgFilter);
+            let msgs = chat.getAllMsgs().filter(msgFilter);
 
             if (searchOptions && searchOptions.limit > 0) {
                 while (msgs.length < searchOptions.limit) {
