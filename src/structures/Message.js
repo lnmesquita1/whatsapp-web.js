@@ -54,6 +54,12 @@ class Message extends Base {
         this.body = this.hasMedia ? data.caption || '' : data.body || data.pollName || '';
 
         /**
+         * ctwaContext content
+         * @type {object}
+         */
+        this.ctwaContext = data.ctwaContext;
+
+        /**
          * Message type
          * @type {MessageTypes}
          */
